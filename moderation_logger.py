@@ -2,7 +2,7 @@ import asyncio
 import json
 import logging
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 import aiofiles
@@ -52,7 +52,7 @@ class ModerationLogger:
                 warns[str(user_id)].append({
                     "reason": reason,
                     "moderator": moderator,
-                    "timestamp": datetime.utcnow().isoformat(),
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
                 })
 
                 async with aiofiles.open(self.warn_file, "w", encoding="utf-8") as f:
