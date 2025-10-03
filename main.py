@@ -124,10 +124,14 @@ class OpenRouterChatClient(commands.Bot):
 
             logger.info("RAG system inicializado com sucesso.")
 
-        except Exception as e:
-            logger.error(f"Erro ao inicializar RAG system: {e}")
+        except (RuntimeError, OSError, asyncio.CancelledError) as e:
+            logger.error(f"Erro de runtime/IO ao inicializar RAG system: {e}")
             self._rag_enabled = False
             self._rag_system = None
+        except Exception as e:
+            # Re-raise unexpected exceptions for debugging
+            logger.error(f"Erro inesperado ao inicializar RAG system: {e}")
+            raise
 
     async def setup_hook(self) -> None:
         await super().setup_hook()
@@ -177,7 +181,7 @@ class OpenRouterChatClient(commands.Bot):
         lock = self._locks.setdefault(channel_id, asyncio.Lock())
 
         async with lock:
-            payload_messages = self._prepare_messages(conversation, content)
+            payload_messages = await self._prepare_messages(conversation, content)
             try:
                 async with message.channel.typing():
                     reply_text = await self._query_openrouter(payload_messages)
@@ -233,7 +237,7 @@ class OpenRouterChatClient(commands.Bot):
 
         return content
 
-    def _prepare_messages(
+    async def _prepare_messages(
         self,
         conversation: Deque[dict[str, str]],
         user_message: str,
@@ -257,7 +261,7 @@ class OpenRouterChatClient(commands.Bot):
                             break
 
                 # Retrieve relevant context from RAG system
-                rag_context = asyncio.run(self._rag_system.retrieve_context(user_query))
+                rag_context = await self._rag_system.retrieve_context(user_query)
 
                 if rag_context:
                     # Add RAG context as a system message before the conversation
