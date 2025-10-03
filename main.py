@@ -103,8 +103,8 @@ class OpenRouterChatClient(discord.Client):
             try:
                 async with message.channel.typing():
                     reply_text = await self._query_openrouter(payload_messages)
-            except Exception as exc:  # noqa: BLE001
-                logger.exception("Erro ao consultar o OpenRouter: %s", exc)
+            except (asyncio.TimeoutError, aiohttp.ClientError, RuntimeError) as exc:
+                logger.exception("Erro ao consultar o OpenRouter")
                 await message.reply(
                     "Desculpe, estou com dificuldades para falar com o OpenRouter agora.",
                     mention_author=False,
@@ -185,6 +185,19 @@ class OpenRouterChatClient(discord.Client):
             headers=self._base_headers,
             json=payload,
         ) as response:
+            if response.status == 429:
+                retry_after = response.headers.get("Retry-After", "60")
+                raise RuntimeError(
+                    f"Rate limit atingido. Tente novamente após {retry_after} segundos."
+                )
+            if response.status in (401, 403):
+                raise RuntimeError(
+                    "Falha de autenticação. Verifique OPENROUTER_API_KEY."
+                )
+            if response.status >= 500:
+                raise RuntimeError(
+                    f"Erro do servidor OpenRouter ({response.status}). Tente novamente mais tarde."
+                )
             if response.status != 200:
                 detail = await response.text()
                 raise RuntimeError(

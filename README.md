@@ -1,14 +1,10 @@
-# Python Discord Bot
+# Bot Discord em Python
 
-This project now turns your server into an AI-powered chatbot using the
-[OpenRouter](https://openrouter.ai/) API. It's built on top of
-[discordpy](https://discordpy.readthedocs.io/); read
-[their getting-started guides](https://discordpy.readthedocs.io/en/stable/#getting-started) to get the most out of this template.
+Este projeto transforma seu servidor em um chatbot alimentado por IA usando a API do [OpenRouter](https://openrouter.ai/). É construído sobre o [discordpy](https://discordpy.readthedocs.io/); leia [seus guias de primeiros passos](https://discordpy.readthedocs.io/en/stable/#getting-started) para aproveitar ao máximo este template.
 
-## Getting Started
+## Começando
 
-To get set up, you'll need to follow [these bot account setup instructions](https://discordpy.readthedocs.io/en/stable/discord.html),
-and then copy the token for your bot and add it as a secret with the key of `TOKEN` in the "Secrets (Environment variables)" panel.
+Para configurar, você precisa seguir [estas instruções de configuração da conta do bot](https://discordpy.readthedocs.io/en/stable/discord.html), e então copiar o token do seu bot e adicioná-lo como um segredo com a chave `TOKEN` no painel "Secrets (Environment variables)".
 
 ## Configurando o OpenRouter
 
@@ -24,6 +20,4 @@ and then copy the token for your bot and add it as a secret with the key of `TOK
 
 ## FAQ
 
-If you get the following error message while trying to start the server: `429 Too Many Requests` (accompanied by a lot of HTML code), 
-try the advice given in this Stackoverflow question:
-https://stackoverflow.com/questions/66724687/in-discord-py-how-to-solve-the-error-for-toomanyrequests
+Se você receber a seguinte mensagem de erro ao tentar iniciar o servidor: `429 Too Many Requests` (acompanhado por muito código HTML), tente o conselho dado nesta pergunta do Stackoverflow: https://stackoverflow.com/questions/66724687/in-discord-py-how-to-solve-the-error-for-toomanyrequests
