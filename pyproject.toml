@@ -1,20 +1,38 @@
-[tool.poetry]
-name = "python-template"
+[project]
+name = "oraculo-bot"
 version = "0.1.0"
-description = ""
-authors = ["Your Name <you@example.com>"]
+description = "A Discord chatbot using OpenRouter and RAG"
+authors = [{name = "Your Name", email = "you@example.com"}]
+dependencies = [
+    "nextcord >=2.3.0,<3.0.0",
+    "httpx >=0.27.0,<1.0.0",
+    "pydantic >=2.5.0,<3.0.0",
+    "pydantic-settings >=2.5.0,<3.0.0",
+    "tenacity >=8.3.0,<9.0.0",
+    "python-dotenv >=1.0.0,<2.0.0",
+    "chromadb >=0.4.24,<1.0.0",
+    "openai >=1.12.0,<2.0.0",
+    "pypdf2 >=3.0.1,<4.0.0",
+    "python-docx >=1.1.0,<2.0.0",
+    "python-magic >=0.4.27,<1.0.0",
+    "tiktoken >=0.6.0,<1.0.0",
+    "aiofiles >=23.2.1,<24.0.0",
+]
 
-[tool.poetry.dependencies]
-python = ">=3.10.0,<3.11"
-discord = "^2.3.2"
-aiohttp = "^3.9.5"
-chromadb = "^0.4.24"
-openai = "^1.12.0"
-pypdf2 = "^3.0.1"
-python-docx = "^1.1.0"
-python-magic = "^0.4.27"
-tiktoken = "^0.6.0"
-aiofiles = "^23.2.1"
+[project.optional-dependencies]
+dev = [
+    "ruff >=0.5.0,<1.0.0",
+    "pytest >=8.0.0,<9.0.0",
+    "pytest-asyncio >=0.23.0,<1.0.0",
+    "pre-commit >=3.7.0,<4.0.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["."]
 
 [tool.pyright]
 # https://github.com/microsoft/pyright/blob/main/docs/configuration.md
@@ -25,6 +43,6 @@ useLibraryCodeForTypes = true
 select = ['E', 'W', 'F', 'I', 'B', 'C4', 'ARG', 'SIM']
 ignore = ['W291', 'W292', 'W293']
 
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
