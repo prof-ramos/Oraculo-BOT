@@ -62,16 +62,16 @@ O sistema automaticamente:
 - Gera embeddings usando OpenAI
 - Armazena no banco de dados vetorial ChromaDB
 
-## Administrative Commands
+## Comandos Administrativos
 
-The bot now supports moderation commands for server management (available as slash commands):
+O bot agora oferece comandos de moderação para gerenciamento do servidor (disponíveis como comandos de barra):
 
-- `/ban <user> [reason]`: Ban a user from the server (requires Ban Members permission).
-- `/kick <user> [reason]`: Kick a user from the server (requires Kick Members permission).
-- `/mute <user> [duration in minutes] [reason]`: Timeout a user for the specified duration (requires Moderate Members permission).
-- `/unmute <user> [reason]`: Remove timeout from a user (requires Moderate Members permission).
-- `/warn <user> [reason]`: Issue a warning to a user (requires Kick Members permission).
-- `/purge <amount>`: Delete up to 100 messages from the channel (requires Manage Messages permission).
-- `/add_document <attachment>`: Upload a legal document to the RAG system (requires Administrator permission).
+- `/ban <usuário> [motivo]`: Banir um usuário do servidor (requer permissão Ban Members).
+- `/kick <usuário> [motivo]`: Expulsar um usuário do servidor (requer permissão Kick Members).
+- `/mute <usuário> [duração em minutos] [motivo]`: Colocar um usuário em timeout pelo período especificado (requer permissão Moderate Members).
+- `/unmute <usuário> [motivo]`: Remover timeout de um usuário (requer permissão Moderate Members).
+- `/warn <usuário> [motivo]`: Emitir um aviso para um usuário (requer permissão Kick Members).
+- `/purge <quantidade>`: Excluir até 100 mensagens do canal (requer permissão Manage Messages).
+- `/add_document <anexo>`: Fazer upload de um documento legal para o sistema RAG (requer permissão Administrator).
 
-All moderation actions are logged to `moderation_log.json`, and user warnings are tracked in `warns.json` for administrative reference.
+Todas as ações de moderação são registradas em `moderation_log.json` e avisos de usuários são rastreados em `warns.json`.
