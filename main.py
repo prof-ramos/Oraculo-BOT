@@ -10,6 +10,13 @@ from typing import Deque, Dict, Iterable, List
 
 import aiohttp
 import discord
+from discord.ext import commands
+
+# RAG system imports
+try:
+    from rag.rag_system import RAGSystem
+except ImportError:
+    RAGSystem = None
 
 
 logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
@@ -27,16 +34,28 @@ def _env_int(name: str, default: int) -> int:
     return value if value > 0 else default
 
 
-class OpenRouterChatClient(discord.Client):
+def _env_float(name: str, default: float) -> float:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    try:
+        value = float(raw)
+    except ValueError:
+        return default
+    return value if value > 0 else default
+
+
+class OpenRouterChatClient(commands.Bot):
     """Discord client that relays messages to OpenRouter."""
 
     def __init__(self, **kwargs):
-        intents = kwargs.pop("intents", None)
-        if intents is None:
-            intents = discord.Intents.default()
-            intents.message_content = True
+        intents = kwargs.pop("intents", discord.Intents.default())
+        intents.message_content = True
+        intents.members = True
+        intents.guilds = True
+        intents.moderation = True
 
-        super().__init__(intents=intents, **kwargs)
+        super().__init__(command_prefix=None, intents=intents, **kwargs)
 
         self._api_key = os.getenv("OPENROUTER_API_KEY")
         if not self._api_key:
@@ -51,7 +70,7 @@ class OpenRouterChatClient(discord.Client):
             "OPENROUTER_SYSTEM_PROMPT",
             "Você é um assistente útil que responde de forma clara e objetiva.",
         )
-        self._timeout_seconds = float(os.getenv("OPENROUTER_TIMEOUT", "60"))
+        self._timeout_seconds = _env_float("OPENROUTER_TIMEOUT", 60.0)
         self._max_turns = _env_int("OPENROUTER_MAX_TURNS", 6)
 
         self._session: aiohttp.ClientSession | None = None
@@ -70,9 +89,68 @@ class OpenRouterChatClient(discord.Client):
         if title:
             self._base_headers["X-Title"] = title
 
+        # Initialize RAG system if available
+        self._rag_system = None
+        self._rag_enabled = os.getenv("RAG_ENABLED", "false").lower() == "true"
+        if self._rag_enabled and RAGSystem is not None:
+            # Initialize RAG system will be called in setup_hook for async initialization
+            pass
+
+    def _initialize_rag_system(self) -> None:
+        """Initialize the RAG system with configuration from environment variables."""
+        try:
+            openai_api_key = os.getenv("OPENAI_API_KEY")
+            if not openai_api_key:
+                logger.warning("OPENAI_API_KEY não definida. RAG system desabilitado.")
+                self._rag_enabled = False
+                return
+
+            chroma_path = os.getenv("RAG_CHROMA_PATH", "./chroma_db")
+            collection_name = os.getenv("RAG_COLLECTION_NAME", "legal_documents")
+            max_context_length = _env_int("RAG_MAX_CONTEXT", 3000)
+            similarity_threshold = _env_float("RAG_SIMILARITY_THRESHOLD", 0.7)
+            chunk_size = _env_int("RAG_CHUNK_SIZE", 1000)
+            chunk_overlap = _env_int("RAG_CHUNK_OVERLAP", 200)
+
+            self._rag_system = RAGSystem(
+                openai_api_key=openai_api_key,
+                chroma_path=chroma_path,
+                collection_name=collection_name,
+                max_context_length=max_context_length,
+                similarity_threshold=similarity_threshold,
+                chunk_size=chunk_size,
+                chunk_overlap=chunk_overlap
+            )
+
+            logger.info("RAG system inicializado com sucesso.")
+
+        except Exception as e:
+            logger.error(f"Erro ao inicializar RAG system: {e}")
+            self._rag_enabled = False
+            self._rag_system = None
+
     async def setup_hook(self) -> None:
         await super().setup_hook()
         await self._ensure_session()
+
+        # Initialize RAG system asynchronously if enabled
+        if self._rag_enabled and RAGSystem is not None:
+            await self._ainitialize_rag_system()
+
+        try:
+            await self.load_extension('admin_cog')
+        except Exception as e:
+            logger.error(f"Failed to load admin cog: {e}")
+
+    async def _ainitialize_rag_system(self) -> None:
+        """Initialize the RAG system asynchronously."""
+        try:
+            loop = asyncio.get_event_loop()
+            await loop.run_in_executor(None, self._initialize_rag_system)
+        except Exception as e:
+            logger.error(f"Erro ao inicializar RAG system: {e}")
+            self._rag_enabled = False
+            self._rag_system = None
 
     async def close(self) -> None:
         if self._session and not self._session.closed:
@@ -161,8 +239,39 @@ class OpenRouterChatClient(discord.Client):
         user_message: str,
     ) -> List[dict[str, str]]:
         messages: List[dict[str, str]] = []
+
+        # Add system prompt
         if self._system_prompt:
             messages.append({"role": "system", "content": self._system_prompt})
+
+        # Add RAG context if available and enabled
+        if self._rag_enabled and self._rag_system:
+            try:
+                # Extract user query from the last message in conversation or use current message
+                user_query = user_message
+                if conversation:
+                    # Get the last user message from conversation for better context
+                    for msg in reversed(conversation):
+                        if msg.get("role") == "user":
+                            user_query = msg.get("content", user_message)
+                            break
+
+                # Retrieve relevant context from RAG system
+                rag_context = asyncio.run(self._rag_system.retrieve_context(user_query))
+
+                if rag_context:
+                    # Add RAG context as a system message before the conversation
+                    context_message = {
+                        "role": "system",
+                        "content": rag_context
+                    }
+                    messages.append(context_message)
+                    logger.debug("RAG context adicionado à consulta")
+
+            except Exception as e:
+                logger.warning(f"Erro ao recuperar contexto RAG: {e}")
+
+        # Add conversation history
         messages.extend(conversation)
         messages.append({"role": "user", "content": user_message})
         return messages
@@ -253,9 +362,7 @@ class OpenRouterChatClient(discord.Client):
 
 
 def _run() -> None:
-    intents = discord.Intents.default()
-    intents.message_content = True
-    client = OpenRouterChatClient(intents=intents)
+    client = OpenRouterChatClient()
 
     token = os.getenv("TOKEN") or ""
     if not token:
