@@ -3,7 +3,6 @@ import asyncio
 from typing import Optional
 from pathlib import Path
 import tempfile
-import os
 
 import aiohttp
 import discord
@@ -49,7 +48,7 @@ class AdminCog(commands.Cog):
                 "user": user.id,
                 "reason": reason,
                 "moderator": str(ctx.author),
-                "timestamp": datetime.datetime.utcnow().isoformat(),
+                "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
             })
             embed = discord.Embed(
                 title="User Banned",
@@ -90,7 +89,7 @@ class AdminCog(commands.Cog):
                 "user": user.id,
                 "reason": reason,
                 "moderator": str(ctx.author),
-                "timestamp": datetime.datetime.utcnow().isoformat(),
+                "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
             })
             embed = discord.Embed(
                 title="User Kicked",
@@ -144,7 +143,7 @@ class AdminCog(commands.Cog):
                 "duration": duration,
                 "reason": reason,
                 "moderator": str(ctx.author),
-                "timestamp": datetime.datetime.utcnow().isoformat(),
+                "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
             })
             embed = discord.Embed(
                 title="User Muted",
@@ -181,7 +180,7 @@ class AdminCog(commands.Cog):
                     "user": user.id,
                     "reason": reason,
                     "moderator": str(ctx.author),
-                    "timestamp": datetime.datetime.utcnow().isoformat(),
+                    "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
                 })
                 embed = discord.Embed(
                     title="User Unmuted",
@@ -223,7 +222,7 @@ class AdminCog(commands.Cog):
             "user": user.id,
             "reason": reason,
             "moderator": str(ctx.author),
-            "timestamp": datetime.datetime.utcnow().isoformat(),
+            "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         })
 
         embed = discord.Embed(
@@ -257,7 +256,7 @@ class AdminCog(commands.Cog):
             "channel": ctx.channel.id,
             "amount": amount,
             "moderator": str(ctx.author),
-            "timestamp": datetime.datetime.utcnow().isoformat(),
+            "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         })
         await ctx.send(f"Deleted {len(deleted)} messages.", delete_after=5)
 
